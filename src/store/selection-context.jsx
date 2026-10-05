@@ -2,7 +2,9 @@ const defaultSelectionState = {
   selectedMovie: null,
   trailerUrl: '',
   trailerNotFound: false,
-  activeListId: null, // MovieList category that currently owns MovieDetail.
+
+  // Identifies which movie list should display the active MovieDetail.
+  activeListId: null,
 };
 
 function selectionReducer(state, { type, payload, meta }) {
@@ -14,17 +16,36 @@ function selectionReducer(state, { type, payload, meta }) {
         trailerNotFound: false,
         activeListId: meta.listId,
       };
+
     case 'SET_TRAILER_URL':
-      if (state.selectedMovie?.id !== meta.movieId) return state;
-      return { ...state, trailerUrl: meta.url };
+      if (state.selectedMovie?.id !== meta.movieId) {
+        return state;
+      }
+
+      return {
+        ...state,
+        trailerUrl: meta.url,
+      };
+
     case 'SET_TRAILER_NOT_FOUND':
-      if (state.selectedMovie?.id !== meta.movieId) return state;
-      return { ...state, trailerNotFound: meta.trailerNotFound };
+      if (state.selectedMovie?.id !== meta.movieId) {
+        return state;
+      }
+
+      return {
+        ...state,
+        trailerNotFound: meta.trailerNotFound,
+      };
+
     case 'CLEAR_SELECTION':
       return defaultSelectionState;
+
     default:
       return state;
   }
 }
 
-export { defaultSelectionState, selectionReducer };
+export {
+  defaultSelectionState,
+  selectionReducer,
+};

@@ -1,47 +1,50 @@
 import { useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 
-import Nav from '../../components/browse/Nav';
+import Nav from '../../components/browse/Nav.jsx';
 import ResultList from '../../components/search/ResultList.jsx';
 import SearchForm from '../../components/search/SearchForm.jsx';
 import useAppContext from '../../hooks/useAppContext.jsx';
 
-function getSearchTermFromLocation(search) {
+function getSearchTerm(search) {
   if (!search || search.length <= 1) return '';
-  const result = decodeURIComponent(search.slice(1));
-  return result;
+
+  return decodeURIComponent(search.slice(1));
 }
 
-const Search = () => {
+function Search() {
   const { getSearch, clearSearch } = useAppContext();
-  const navigate = useNavigate();
+
   const location = useLocation();
+  const navigate = useNavigate();
 
   const [searchInput, setSearchInput] = useState('');
 
-  const hasSearched = getSearchTermFromLocation(location.search) !== '';
+  const searchTerm = getSearchTerm(location.search);
+  const hasSearched = Boolean(searchTerm);
 
-  const handleSearch = (e) => {
-    e.preventDefault();
+  function handleSearch(event) {
+    event.preventDefault();
+
     const term = searchInput.trim();
-    if (!term) return; // Không gửi request khi từ khóa rỗng.
+
+    if (!term) return;
 
     navigate(`/search?${encodeURIComponent(term)}`);
-  };
+  }
 
-  const handleResetSearch = () => {
+  function handleResetSearch() {
     setSearchInput('');
-  };
+  }
 
   useEffect(() => {
-    const term = getSearchTermFromLocation(location.search);
-
-    if (term) {
-      getSearch(term);
-    } else {
-      clearSearch();
+    if (searchTerm) {
+      getSearch(searchTerm);
+      return;
     }
-  }, [location.search, getSearch, clearSearch]);
+
+    clearSearch();
+  }, [searchTerm, getSearch, clearSearch]);
 
   return (
     <div className='min-h-screen bg-[#111] text-white'>
@@ -57,6 +60,6 @@ const Search = () => {
       {hasSearched && <ResultList />}
     </div>
   );
-};
+}
 
 export default Search;

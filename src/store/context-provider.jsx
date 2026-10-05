@@ -1,12 +1,21 @@
-import { createContext, useCallback, useEffect, useReducer } from 'react';
+import {
+  createContext,
+  useCallback,
+  useEffect,
+  useReducer,
+} from 'react';
+
+import { fetchSearch } from '../utils/http.js';
 import {
   defaultMoviesState,
   moviesReducer,
   STATIC_CATEGORIES,
   STATIC_FETCHERS,
-} from './movies-context';
-import { defaultSelectionState, selectionReducer } from './selection-context';
-import { fetchSearch } from '../utils/http';
+} from './movies-context.jsx';
+import {
+  defaultSelectionState,
+  selectionReducer,
+} from './selection-context.jsx';
 
 export const AppContext = createContext({
   movies: defaultMoviesState,
@@ -20,39 +29,50 @@ export const AppContext = createContext({
   clearSelection: () => {},
 });
 
-export default function AppContextProvider({ children }) {
-  const [movies, dispatch] = useReducer(moviesReducer, defaultMoviesState);
+function AppContextProvider({ children }) {
+  const [movies, dispatchMovies] = useReducer(
+    moviesReducer,
+    defaultMoviesState,
+  );
 
   const [selection, dispatchSelection] = useReducer(
     selectionReducer,
     defaultSelectionState,
   );
 
-  const runFetch = useCallback(async (category, apiFn) => {
-    dispatch({ type: 'FETCH_START', meta: { category } });
+  const runFetch = useCallback(async (category, fetchFunction) => {
+    dispatchMovies({
+      type: 'FETCH_START',
+      meta: { category },
+    });
+
     try {
-      const data = await apiFn();
-      dispatch({
+      const data = await fetchFunction();
+
+      dispatchMovies({
         type: 'FETCH_SUCCESS',
-        meta: { category },
         payload: data,
+        meta: { category },
       });
     } catch (error) {
-      dispatch({
+      dispatchMovies({
         type: 'FETCH_ERROR',
-        meta: { category },
         payload: error?.message || 'Đã có lỗi xảy ra',
+        meta: { category },
       });
     }
   }, []);
 
   const getSearch = useCallback(
-    (query) => runFetch('search', () => fetchSearch(query)),
+    (query) =>
+      runFetch('search', () => fetchSearch(query)),
     [runFetch],
   );
 
   const clearSearch = useCallback(() => {
-    dispatch({ type: 'CLEAR_SEARCH' });
+    dispatchMovies({
+      type: 'CLEAR_SEARCH',
+    });
   }, []);
 
   const selectMovie = useCallback((movie, listId) => {
@@ -66,43 +86,55 @@ export default function AppContextProvider({ children }) {
   const setTrailerUrl = useCallback((url, movieId) => {
     dispatchSelection({
       type: 'SET_TRAILER_URL',
-      meta: { url, movieId },
+      meta: {
+        url,
+        movieId,
+      },
     });
   }, []);
 
-  const setTrailerNotFound = useCallback((value, movieId) => {
-    dispatchSelection({
-      type: 'SET_TRAILER_NOT_FOUND',
-      meta: { trailerNotFound: value, movieId },
-    });
-  }, []);
+  const setTrailerNotFound = useCallback(
+    (trailerNotFound, movieId) => {
+      dispatchSelection({
+        type: 'SET_TRAILER_NOT_FOUND',
+        meta: {
+          trailerNotFound,
+          movieId,
+        },
+      });
+    },
+    [],
+  );
 
   const clearSelection = useCallback(() => {
-    dispatchSelection({ type: 'CLEAR_SELECTION' });
+    dispatchSelection({
+      type: 'CLEAR_SELECTION',
+    });
   }, []);
 
-  // Fetch all static movie categories once when the provider mounts.
   useEffect(() => {
-    Promise.all(
-      STATIC_CATEGORIES.map((category) =>
-        runFetch(category, STATIC_FETCHERS[category]),
-      ),
-    );
+    STATIC_CATEGORIES.forEach((category) => {
+      runFetch(category, STATIC_FETCHERS[category]);
+    });
   }, [runFetch]);
 
+  const contextValue = {
+    movies,
+    getSearch,
+    clearSearch,
+
+    selection,
+    selectMovie,
+    setTrailerUrl,
+    setTrailerNotFound,
+    clearSelection,
+  };
+
   return (
-    <AppContext.Provider
-      value={{
-        movies,
-        getSearch,
-        clearSearch,
-        selection,
-        selectMovie,
-        setTrailerUrl,
-        setTrailerNotFound,
-        clearSelection,
-      }}>
+    <AppContext.Provider value={contextValue}>
       {children}
     </AppContext.Provider>
   );
 }
+
+export default AppContextProvider;
