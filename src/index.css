@@ -8,3 +8,110 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
+
+/* Manual horizontal scrolling */
+
+.movie-manual-scroll {
+  display: flex;
+  gap: 0.625rem;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding: 1.25rem;
+
+  scrollbar-width: thin;
+  scrollbar-color: transparent transparent;
+}
+
+.movie-manual-scroll:hover {
+  scrollbar-color: rgba(115, 115, 115, 0.65) transparent;
+}
+
+.movie-manual-scroll::-webkit-scrollbar {
+  height: 6px;
+}
+
+.movie-manual-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.movie-manual-scroll::-webkit-scrollbar-thumb {
+  border-radius: 9999px;
+  background: transparent;
+}
+
+.movie-manual-scroll:hover::-webkit-scrollbar-thumb {
+  background: rgba(115, 115, 115, 0.65);
+}
+
+.movie-manual-scroll:hover::-webkit-scrollbar-thumb:hover {
+  background: rgba(163, 163, 163, 0.8);
+}
+
+/* Automatic marquee */
+
+@keyframes movie-list-scroll-left {
+  from {
+    transform: translateX(0);
+  }
+
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+@keyframes movie-list-scroll-right {
+  from {
+    transform: translateX(-50%);
+  }
+
+  to {
+    transform: translateX(0);
+  }
+}
+
+.movie-scroll-viewport {
+  overflow: hidden;
+  padding: 1.25rem;
+}
+
+.movie-scroll-track {
+  display: flex;
+  width: max-content;
+  will-change: transform;
+}
+
+.movie-scroll-track.movie-scroll-left {
+  animation: movie-list-scroll-left var(--movie-scroll-duration, 60s) linear
+    infinite;
+}
+
+.movie-scroll-track.movie-scroll-right {
+  animation: movie-list-scroll-right var(--movie-scroll-duration, 60s) linear
+    infinite;
+}
+
+.movie-scroll-group {
+  display: flex;
+  flex-shrink: 0;
+  gap: 0.625rem;
+  padding-right: 0.625rem;
+}
+
+.movie-scroll-viewport:hover .movie-scroll-track,
+.movie-scroll-track.movie-scroll-paused {
+  animation-play-state: paused;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .movie-scroll-viewport {
+    overflow-x: auto;
+  }
+
+  .movie-scroll-track {
+    animation: none;
+  }
+
+  .movie-scroll-group[aria-hidden='true'] {
+    display: none;
+  }
+}

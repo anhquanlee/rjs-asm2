@@ -1,28 +1,43 @@
+import { useState } from 'react';
+
 import useAppContext from '../../hooks/useAppContext.jsx';
 import { fetchTrailerKey } from '../../utils/http.js';
 
+import AutoScrollRow from './AutoScrollRow.jsx';
 import MovieCard from './MovieCard.jsx';
 import MovieDetail from './MovieDetail.jsx';
 
 const POSTER_BASE_URL = 'https://image.tmdb.org/t/p/w300';
 const BACKDROP_BASE_URL = 'https://image.tmdb.org/t/p/w780';
+
 const MOVIES_LIMIT = 20;
 
 function buildImageUrl(movie, isLargeRow) {
-  const imagePath = isLargeRow
-    ? movie.poster_path
-    : movie.backdrop_path;
+  const imagePath = isLargeRow ? movie.poster_path : movie.backdrop_path;
 
   if (!imagePath) return null;
 
-  const baseUrl = isLargeRow
-    ? POSTER_BASE_URL
-    : BACKDROP_BASE_URL;
+  const baseUrl = isLargeRow ? POSTER_BASE_URL : BACKDROP_BASE_URL;
 
   return `${baseUrl}${imagePath}`;
 }
 
-function MovieList({ title, category, isLargeRow = false }) {
+function getRandomDirection() {
+  return Math.random() < 0.5 ? 'left' : 'right';
+}
+
+function getRandomDuration() {
+  return Math.floor(Math.random() * (50 - 30 + 1)) + 30;
+}
+
+function MovieList({
+  title,
+  category,
+  isLargeRow = false,
+  marquee = false,
+  marqueeDirection,
+  marqueeDuration,
+}) {
   const {
     movies,
     selection,
@@ -32,16 +47,22 @@ function MovieList({ title, category, isLargeRow = false }) {
     clearSelection,
   } = useAppContext();
 
+  const [randomDirection] = useState(getRandomDirection);
+
+  const [randomDuration] = useState(getRandomDuration);
+
   const { data, isLoading, error } = movies[category];
 
-  const {
-    selectedMovie,
-    trailerUrl,
-    trailerNotFound,
-    activeListId,
-  } = selection;
+  const { selectedMovie, trailerUrl, trailerNotFound, activeListId } =
+    selection;
 
   const ownsSelectedMovie = activeListId === category;
+
+  const pauseMarquee = ownsSelectedMovie && Boolean(selectedMovie);
+
+  const direction = marqueeDirection ?? randomDirection;
+
+  const duration = marqueeDuration ?? randomDuration;
 
   const movieItems = [...(data?.results ?? [])]
     .sort((a, b) => b.popularity - a.popularity)
@@ -53,8 +74,7 @@ function MovieList({ title, category, isLargeRow = false }) {
     .filter(({ imageUrl }) => imageUrl);
 
   async function handleMovieClick(movie) {
-    const isSelectedMovie =
-      selectedMovie?.id === movie.id && ownsSelectedMovie;
+    const isSelectedMovie = selectedMovie?.id === movie.id && ownsSelectedMovie;
 
     if (isSelectedMovie) {
       clearSelection();
@@ -68,6 +88,7 @@ function MovieList({ title, category, isLargeRow = false }) {
 
       if (trailerKey) {
         setTrailerUrl(trailerKey, movie.id);
+
         return;
       }
 
@@ -77,36 +98,36 @@ function MovieList({ title, category, isLargeRow = false }) {
     }
   }
 
+  const movieCards = movieItems.map(({ movie, imageUrl }) => (
+    <MovieCard
+      key={movie.id}
+      src={imageUrl}
+      alt={movie.name || movie.title}
+      isLargeRow={isLargeRow}
+      onClick={() => handleMovieClick(movie)}
+    />
+  ));
+
   return (
     <section className='ml-5 text-white'>
-      <h2 className='font-[Arial] text-2xl font-semibold'>
-        {title}
-      </h2>
+      <h2 className='font-[Arial] text-2xl font-semibold'>{title}</h2>
 
       {isLoading && (
-        <p className='px-5 text-sm text-neutral-400'>
-          Đang tải...
-        </p>
+        <p className='px-5 text-sm text-neutral-400'>Đang tải...</p>
       )}
 
       {!isLoading && error && (
-        <p className='px-5 text-sm text-red-400'>
-          Lỗi: {error}
-        </p>
+        <p className='px-5 text-sm text-red-400'>Lỗi: {error}</p>
       )}
 
       {!isLoading && !error && (
-        <div className='flex gap-2.5 overflow-x-auto overflow-y-auto p-5 scrollbar-thin [scrollbar-color:transparent_transparent] hover:[scrollbar-color:rgba(255,255,255,0.3)_transparent] [&::-webkit-scrollbar]:h-1.5 [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-transparent [&::-webkit-scrollbar-thumb]:transition-colors hover:[&::-webkit-scrollbar-thumb]:bg-white/30'>
-          {movieItems.map(({ movie, imageUrl }) => (
-            <MovieCard
-              key={movie.id}
-              src={imageUrl}
-              alt={movie.name || movie.title}
-              isLargeRow={isLargeRow}
-              onClick={() => handleMovieClick(movie)}
-            />
-          ))}
-        </div>
+        <AutoScrollRow
+          enabled={marquee}
+          paused={pauseMarquee}
+          direction={direction}
+          duration={duration}>
+          {movieCards}
+        </AutoScrollRow>
       )}
 
       {ownsSelectedMovie && selectedMovie && (

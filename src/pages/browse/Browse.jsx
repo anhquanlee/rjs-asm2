@@ -1,6 +1,6 @@
-import MovieList from '../../components/browse/MovieList';
-import Banner from '../../components/browse/Banner';
-import Nav from '../../components/browse/Nav';
+import Banner from '../../components/browse/Banner.jsx';
+import MovieList from '../../components/browse/MovieList.jsx';
+import Nav from '../../components/browse/Nav.jsx';
 
 function Browse() {
   return (
